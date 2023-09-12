@@ -1,41 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom';
+import Login from './components/Login';
+import SelectPriceRange from './components/SelectedPriceRange';
+import DisplayBuilds from './components/DisplayBuilds'; 
 
 function App() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  const register = () => {
-    fetch('http://localhost:5555/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    })
-    .then(res => res.json())
-    .then(data => alert(data.message));
-  };
-
-  const login = () => {
-    fetch('http://localhost:5555/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-      credentials: 'include',
-    })
-    .then(res => res.json())
-    .then(data => alert(data.message));
-  };
-
   return (
-    <div>
-      <input type="text" placeholder="Username" onChange={e => setUsername(e.target.value)} />
-      <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-      <button onClick={register}>Register</button>
-      <button onClick={login}>Login</button>
-    </div>
+    <Router>
+      <Route path="/login" exact component={Login} />
+      <Route path="/select_price_range" exact component={SelectPriceRange} />
+      <Route path="/display-builds" exact component={DisplayBuilds} /> 
+      <Route path="/" exact>
+        <Redirect to="/login" />
+      </Route>
+    </Router>
   );
 }
 
