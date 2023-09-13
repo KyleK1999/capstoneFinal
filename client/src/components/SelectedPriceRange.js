@@ -1,5 +1,5 @@
 import React from 'react';
-import { useHistory } from 'react-router-dom'; // Importing useHistory
+import { useHistory } from 'react-router-dom';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;

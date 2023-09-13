@@ -28,14 +28,14 @@ const PartSwitcher = ({ buildIndex, partType, switchPart }) => {
             <div key={index}>
               {Object.keys(part).map((key, i) => {
                 if (key !== 'id' && key !== 'ProductImage' && key !== 'purchase_link') {
-                  return <span key={i} style={{ marginRight: '10px' }}>{key}: {formatPart(key, part[key])}</span>; // Add margin to the right
+                  return <span key={i} style={{ marginRight: '10px' }}>{key}: {formatPart(key, part[key])}</span>; 
                 }
                 return null;
               })}
               <button onClick={() => {
                 switchPart(buildIndex, partType, part);
                 setIsOpen(false);
-              }} style={{ marginLeft: '10px' }}>Switch</button>  {/* Add margin to the left */}
+              }} style={{ marginLeft: '10px' }}>Switch</button>  
             </div>
           ))}
         </div>

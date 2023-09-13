@@ -17,6 +17,9 @@ const Navbar = () => {
           <Link to="/select_price_range">Home</Link>
         </li>
         <li>
+          <Link to="/profile">Profile</Link>
+        </li>
+        <li>
           <button onClick={handleLogout}>Logout</button>
         </li>
       </ul>
