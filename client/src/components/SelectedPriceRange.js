@@ -31,7 +31,7 @@ function SelectPriceRange() {
     .then(res => res.json())
     .then(data => {
       alert(data.message);
-      history.push(`/display-builds?minPrice=${minPrice}&maxPrice=${maxPrice}`);  // Redirecting here
+      history.push(`/display-builds?minPrice=${minPrice}&maxPrice=${maxPrice}`);  
     })
     .catch(err => {
       console.error("Failed to set price range:", err);
