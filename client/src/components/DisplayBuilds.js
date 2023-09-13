@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PcHardware from './PcHardware';
 import PartSwitcher from './PartSwitcher'; 
+import SaveBuildButton from './SaveBuildButton';
 
 function DisplayBuilds(props) {
   const [builds, setBuilds] = useState([]);

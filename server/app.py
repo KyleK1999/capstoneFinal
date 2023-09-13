@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 # Standard library imports
-from flask import request, jsonify, make_response, Flask
-from flask_restful import Resource
+from flask import request, jsonify, make_response
 from flask_cors import CORS
 # Local imports
 from config import app, db, api
@@ -171,6 +170,32 @@ def get_parts():
         return jsonify({'error': f'Invalid type: {type_}'}), 400  # Detailed error message
 
     return jsonify([part.serialize() for part in parts])
+
+@app.route('/save_build', methods=['POST'])
+def save_build():
+    username = request.cookies.get('username') 
+    if not username:
+        return jsonify({'message': 'Not authenticated'}), 401
+
+    build_details = request.json.get('build')
+
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    new_build = Builds(
+        price_range_id=build_details.get('price_range_id'),
+        build_type_id=build_details.get('build_type_id')
+    )
+
+    new_build.user_id = user.id
+    
+    db.session.add(new_build)
+    db.session.commit()
+    
+    return jsonify({'message': 'Build saved successfully'})
+
     
 
 @app.route('/')
