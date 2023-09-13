@@ -6,7 +6,7 @@ from flask_restful import Resource
 from flask_cors import CORS
 # Local imports
 from config import app, db, api
-from models import User, PriceRanges, BuildComponents, Builds
+from models import User, PriceRanges, BuildComponents, Builds, GPU, CPU, Memory, MotherBoard, Storage, PSU, Case, BuildType
 import bcrypt
 
 CORS(app, supports_credentials=True)
@@ -63,22 +63,115 @@ def set_price_range():
 
 @app.route('/get_builds_for_user', methods=['GET'])
 def get_builds_for_user():
-    username = request.args.get('username')  # get this from username cookie in real application
+    username = request.args.get('username')
     user = User.query.filter_by(username=username).first()
     
     if user:
-        builds = Build.query.filter_by(price_range_id=user.selected_price_range).all()
+        builds = Builds.query.filter_by(price_range_id=user.selected_price_range).all()
         
-        build_components_list = []
+        build_details_list = []
+        
         for build in builds:
-            components = BuildComponents.query.filter_by(build_id=build.id).first()
-            build_components_list.append(components.serialize())  # Assuming you have a serialize method to convert object to JSON
+            components_record = BuildComponents.query.filter_by(build_id=build.id).first()
+            build_type = db.session.get(BuildType, build.build_type_id)
+            price_range = PriceRanges.query.get(build.price_range_id)
+
+            full_components = {
+                'gpu': db.session.get(GPU, components_record.gpu_id).serialize(),
+                'cpu': db.session.get(CPU, components_record.cpu_id).serialize(),
+                'memory': db.session.get(Memory, components_record.memory_id).serialize(),
+                'motherboard': db.session.get(MotherBoard, components_record.motherboard_id).serialize(),
+                'storage': db.session.get(Storage, components_record.storage_id).serialize(),
+                'psu': db.session.get(PSU, components_record.psu_id).serialize(),
+                'case': db.session.get(Case, components_record.case_id).serialize(),
+
+            }
+
+            build_details_list.append({
+                'build_id': build.id,
+                'price_range': f"{price_range.min_price}-{price_range.max_price}", 
+                'build_type': build_type.type_name, 
+                'components': full_components
+            })
         
-        return jsonify(build_components_list)
+        return jsonify(build_details_list)
     else:
         return jsonify({'error': 'User not found'}), 404
+    
+@app.route('/get_builds', methods=['GET'])
+def get_builds():
+    min_price = request.args.get('minPrice')
+    max_price = request.args.get('maxPrice')
+    
+    min_price = int(min_price) if min_price else None
+    max_price = int(max_price) if max_price else None
 
+    price_range = PriceRanges.query.filter(
+        PriceRanges.min_price <= min_price, 
+        PriceRanges.max_price >= max_price
+    ).first()
+    
+    if price_range is None:
+        return jsonify({'error': 'No matching price range found'}), 400
 
+    builds = Builds.query.filter_by(price_range_id=price_range.id).all()
+
+    build_details_list = []
+    for build in builds:
+        components_record = BuildComponents.query.filter_by(build_id=build.id).first()
+        build_type = db.session.get(BuildType, build.build_type_id)
+        price_range = PriceRanges.query.get(build.price_range_id)
+
+        full_components = {
+            'gpu': db.session.get(GPU, components_record.gpu_id).serialize(),
+            'cpu': db.session.get(CPU, components_record.cpu_id).serialize(),
+            'memory': db.session.get(Memory, components_record.memory_id).serialize(),
+            'motherboard': db.session.get(MotherBoard, components_record.motherboard_id).serialize(),
+            'storage': db.session.get(Storage, components_record.storage_id).serialize(),
+            'psu': db.session.get(PSU, components_record.psu_id).serialize(),
+            'case': db.session.get(Case, components_record.case_id).serialize(),
+        }
+
+        build_details_list.append({
+            'id': build.id,
+            'price_range_id': build.price_range_id,
+            'price_range': f"{price_range.min_price}-{price_range.max_price}",
+            'build_type': build_type.type_name,
+            'build_type_id': build.build_type_id,
+            'components': full_components  
+        })
+
+    return jsonify({'builds': build_details_list})  
+
+@app.route('/get_parts', methods=['GET'])
+def get_parts():
+    type_ = request.args.get('type')
+    print(f"Received type_: {type_}")  
+
+    if type_ is None:
+        return jsonify({'error': 'Type is missing'}), 400
+
+    type_ = type_.lower()  
+    
+    if type_ == 'gpu':
+        parts = GPU.query.all()
+    elif type_ == 'cpu':
+        parts = CPU.query.all()
+    elif type_ == 'memory':
+        parts = Memory.query.all()
+    elif type_ == 'motherboard':
+        parts = MotherBoard.query.all()
+    elif type_ == 'storage':
+        parts = Storage.query.all()
+    elif type_ == 'psu':
+        parts = PSU.query.all()
+    elif type_ == 'case':
+        parts = Case.query.all()
+    else:
+        return jsonify({'error': f'Invalid type: {type_}'}), 400  # Detailed error message
+
+    return jsonify([part.serialize() for part in parts])
+    
 
 @app.route('/')
 def index():

@@ -1,33 +1,115 @@
 import React, { useEffect, useState } from 'react';
+import PcHardware from './PcHardware';
+import PartSwitcher from './PartSwitcher'; 
 
 function DisplayBuilds(props) {
   const [builds, setBuilds] = useState([]);
+  const [error, setError] = useState(null);
+  const [showMoreInfo, setShowMoreInfo] = useState({});
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const minPrice = urlParams.get('minPrice');
-    const maxPrice = urlParams.get('maxPrice');
+    const fetchData = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const minPrice = urlParams.get('minPrice');
+      const maxPrice = urlParams.get('maxPrice');
 
-    // Fetch builds based on minPrice and maxPrice
-    fetch(`http://localhost:5555/get_builds?minPrice=${minPrice}&maxPrice=${maxPrice}`)
-      .then(response => response.json())
-      .then(data => {
-        setBuilds(data.builds);
-      })
-      .catch(error => console.error('Error:', error));
+      try {
+        const response = await fetch(`http://localhost:5555/get_builds?minPrice=${minPrice}&maxPrice=${maxPrice}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Data from API:", data);
+          setBuilds(data.builds);
+          setError(null);
+        } else {
+          throw new Error('Server response not OK');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Could not fetch builds.');
+      }
+    };
+
+    fetchData();
   }, []);
+
+  const switchPart = (buildIndex, partType, selectedPart) => {
+    const updatedBuilds = [...builds];
+    const buildToUpdate = updatedBuilds[buildIndex];
+    if (buildToUpdate && buildToUpdate.components) {
+      if (partType in buildToUpdate.components) {
+        buildToUpdate.components[partType] = selectedPart;
+        buildToUpdate.totalPrice = calculateTotalPrice(buildToUpdate.components);
+        updatedBuilds[buildIndex] = buildToUpdate;
+        setBuilds(updatedBuilds);
+      } else {
+        console.error(`Part type not found: ${partType}`);
+      }
+    }
+  };
+
+  const calculateTotalPrice = (components) => {
+    let total = 0;
+    for (const key in components) {
+      if (components[key] && components[key].Price) {
+        total += components[key].Price;
+      }
+    }
+    return total.toFixed(2);
+  };
+
+  const toggleMoreInfo = (index, part) => {
+    const key = `${index}_${part}`;
+    setShowMoreInfo(prevState => ({
+      ...prevState,
+      [key]: !prevState[key]
+    }));
+  };
 
   return (
     <div>
       <h2>Builds</h2>
-      <ul>
-        {builds.map((build, index) => (
-          <li key={index}>
-            {/* Display build details here. Replace with your own structure */}
-            Build ID: {build.id}, Price Range ID: {build.price_range_id}, Build Type ID: {build.build_type_id}
-          </li>
-        ))}
-      </ul>
+      {error && <p>Error: {error}</p>}
+      {Array.isArray(builds) && builds.length > 0 ? (
+        builds.map((build, index) => {
+          if (!build || !build.components) {
+            return <div key={index}>This build or its components are undefined or null.</div>;
+          }
+          
+          const { cpu, gpu, memory, motherboard, storage, psu, case: caseItem } = build.components;
+          const totalPrice = calculateTotalPrice(build.components);
+
+          return (
+            <div key={index}>
+              <h3>Build Type: {build.build_type || 'N/A'} | Total Price: ${totalPrice}</h3>
+              <div>
+                <PcHardware index={index} name='CPU' type='cpu' partInfo={cpu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='cpu' switchPart={switchPart} />
+                
+                <PcHardware index={index} name='GPU' type='gpu' partInfo={gpu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='gpu' switchPart={switchPart} />
+
+                <PcHardware index={index} name='Memory' type='memory' partInfo={memory} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='memory' switchPart={switchPart} />
+
+                <PcHardware index={index} name='Motherboard' type='motherboard' partInfo={motherboard} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='motherboard' switchPart={switchPart} />
+
+                <PcHardware index={index} name='Storage' type='storage' partInfo={storage} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='storage' switchPart={switchPart} />
+
+                <PcHardware index={index} name='PSU' type='psu' partInfo={psu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='psu' switchPart={switchPart} />
+
+                <PcHardware index={index} name='Case' type='case' partInfo={caseItem} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
+                <PartSwitcher buildIndex={index} partType='case' switchPart={switchPart} />
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        'Loading...'
+      )}
     </div>
   );
 }
