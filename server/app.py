@@ -113,34 +113,51 @@ def get_builds():
     if price_range is None:
         return jsonify({'error': 'No matching price range found'}), 400
 
-    builds = Builds.query.filter_by(price_range_id=price_range.id).all()
+    # Filter builds that have no associated user_id
+    builds = Builds.query.filter(
+        Builds.price_range_id == price_range.id,
+        Builds.user_id == None  # Filter out builds with user_id set
+    ).all()
 
     build_details_list = []
+
     for build in builds:
         components_record = BuildComponents.query.filter_by(build_id=build.id).first()
-        build_type = db.session.get(BuildType, build.build_type_id)
-        price_range = PriceRanges.query.get(build.price_range_id)
 
-        full_components = {
-            'gpu': db.session.get(GPU, components_record.gpu_id).serialize(),
-            'cpu': db.session.get(CPU, components_record.cpu_id).serialize(),
-            'memory': db.session.get(Memory, components_record.memory_id).serialize(),
-            'motherboard': db.session.get(MotherBoard, components_record.motherboard_id).serialize(),
-            'storage': db.session.get(Storage, components_record.storage_id).serialize(),
-            'psu': db.session.get(PSU, components_record.psu_id).serialize(),
-            'case': db.session.get(Case, components_record.case_id).serialize(),
-        }
+        if components_record is None:
+            # Handle the case where components are missing
+            components_data = {
+                'gpu': {},
+                'cpu': {},
+                'memory': {},
+                'motherboard': {},
+                'storage': {},
+                'psu': {},
+                'case': {},
+            }
+        else:
+            build_type = BuildType.query.get(build.build_type_id)  # Fetch the build_type
+            components_data = {
+                'gpu': db.session.get(GPU, components_record.gpu_id).serialize(),
+                'cpu': db.session.get(CPU, components_record.cpu_id).serialize(),
+                'memory': db.session.get(Memory, components_record.memory_id).serialize(),
+                'motherboard': db.session.get(MotherBoard, components_record.motherboard_id).serialize(),
+                'storage': db.session.get(Storage, components_record.storage_id).serialize(),
+                'psu': db.session.get(PSU, components_record.psu_id).serialize(),
+                'case': db.session.get(Case, components_record.case_id).serialize(),
+            }
 
         build_details_list.append({
             'id': build.id,
             'price_range_id': build.price_range_id,
             'price_range': f"{price_range.min_price}-{price_range.max_price}",
-            'build_type': build_type.type_name,
+            'build_type': build_type.type_name,  # Use build_type here
             'build_type_id': build.build_type_id,
-            'components': full_components  
+            'components': components_data  
         })
 
-    return jsonify({'builds': build_details_list})  
+    return jsonify({'builds': build_details_list})
+  
 
 @app.route('/get_parts', methods=['GET'])
 def get_parts():
@@ -167,36 +184,139 @@ def get_parts():
     elif type_ == 'case':
         parts = Case.query.all()
     else:
-        return jsonify({'error': f'Invalid type: {type_}'}), 400  # Detailed error message
+        return jsonify({'error': f'Invalid type: {type_}'}), 400  
 
     return jsonify([part.serialize() for part in parts])
 
 @app.route('/save_build', methods=['POST'])
 def save_build():
-    username = request.cookies.get('username') 
+    username = request.cookies.get('username')
     if not username:
         return jsonify({'message': 'Not authenticated'}), 401
 
     build_details = request.json.get('build')
 
+    if not build_details:
+        return jsonify({'message': 'Build details missing'}), 400
+
+    price_range_id = build_details.get('price_range_id')
+    build_type_id = build_details.get('build_type_id')
+    updated_components = build_details.get('components', {})
+
+    if price_range_id is None or build_type_id is None:
+        return jsonify({'message': 'Invalid build details'}), 400
+
     user = User.query.filter_by(username=username).first()
-    
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Create a new build associated with the user
+    new_build = Builds(
+        price_range_id=price_range_id,
+        build_type_id=build_type_id,
+        user_id=user.id
+    )
+
+    db.session.add(new_build)
+    db.session.commit()
+
+    # Extract or get default value for each component id
+    gpu_id = updated_components.get('gpu', {}).get('id', None)
+    cpu_id = updated_components.get('cpu', {}).get('id', None)
+    memory_id = updated_components.get('memory', {}).get('id', None)
+    motherboard_id = updated_components.get('motherboard', {}).get('id', None)
+    storage_id = updated_components.get('storage', {}).get('id', None)
+    psu_id = updated_components.get('psu', {}).get('id', None)
+    case_id = updated_components.get('case', {}).get('id', None)
+
+    # Create a new BuildComponents entry
+    new_components = BuildComponents(
+        build_id=new_build.id,
+        gpu_id=gpu_id,
+        cpu_id=cpu_id,
+        memory_id=memory_id,
+        motherboard_id=motherboard_id,
+        storage_id=storage_id,
+        psu_id=psu_id,
+        case_id=case_id
+    )
+
+    db.session.add(new_components)
+    db.session.commit()
+
+    return jsonify({'message': 'Build saved successfully'})
+
+
+@app.route('/get_saved_builds', methods=['GET'])
+def get_saved_builds():
+    username = request.cookies.get('username')
+    if not username:
+        return jsonify({'message': 'Not authenticated'}), 401
+
+    user = User.query.filter_by(username=username).first()
+
     if not user:
         return jsonify({'message': 'User not found'}), 404
     
-    new_build = Builds(
-        price_range_id=build_details.get('price_range_id'),
-        build_type_id=build_details.get('build_type_id')
-    )
+    saved_builds = Builds.query.filter_by(user_id=user.id).all()
 
-    new_build.user_id = user.id
-    
-    db.session.add(new_build)
-    db.session.commit()
-    
-    return jsonify({'message': 'Build saved successfully'})
+    saved_builds_json = []
 
+    for build in saved_builds:
+        build_type_data = {
+            'type_name': build.build_type.type_name,
+        }
+
+        components_record = BuildComponents.query.filter_by(build_id=build.id).first()
+
+        if components_record is None:
+            components_data = {
+                'gpu': {},
+                'cpu': {},
+                'memory': {},
+                'motherboard': {},
+                'storage': {},
+                'psu': {},
+                'case': {},
+            }
+        else:
+            components_data = {
+                'gpu': db.session.get(GPU, components_record.gpu_id).serialize(),
+                'cpu': db.session.get(CPU, components_record.cpu_id).serialize(),
+                'memory': db.session.get(Memory, components_record.memory_id).serialize(),
+                'motherboard': db.session.get(MotherBoard, components_record.motherboard_id).serialize(),
+                'storage': db.session.get(Storage, components_record.storage_id).serialize(),
+                'psu': db.session.get(PSU, components_record.psu_id).serialize(),
+                'case': db.session.get(Case, components_record.case_id).serialize(),
+            }
+
+        saved_builds_json.append({
+            'build_type': build_type_data,
+            'components': components_data,
+        })
+    print(f"Sending saved builds: {saved_builds_json}")
+
+    return jsonify({'savedBuilds': saved_builds_json})
+
+@app.route('/delete_build/<int:build_id>', methods=['DELETE'])
+def delete_build(build_id):
+    print(f"Received build_id: {build_id}")
     
+    if build_id is None:
+        return jsonify({'message': 'Invalid build ID'}), 400
+    
+    try:
+        build_to_delete = Builds.query.get(build_id)
+        if build_to_delete:
+            db.session.delete(build_to_delete)
+            db.session.commit()
+            return jsonify({'message': 'Build deleted successfully'}), 200
+        else:
+            return jsonify({'message': 'Build not found'}), 404
+    except Exception as e:
+        return jsonify({'message': f'Error occurred: {str(e)}'}), 500
+
 
 @app.route('/')
 def index():

@@ -20,6 +20,7 @@ function DisplayBuilds(props) {
         if (response.ok) {
           const data = await response.json();
           console.log("Data from API:", data);
+          console.log("Data from API:", data);
           setBuilds(data.builds);
           setError(null);
         } else {
@@ -104,6 +105,7 @@ function DisplayBuilds(props) {
 
                 <PcHardware index={index} name='Case' type='case' partInfo={caseItem} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
                 <PartSwitcher buildIndex={index} partType='case' switchPart={switchPart} />
+                <SaveBuildButton buildDetails={build} />
               </div>
             </div>
           );
