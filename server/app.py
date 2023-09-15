@@ -97,6 +97,7 @@ def get_builds_for_user():
     else:
         return jsonify({'error': 'User not found'}), 404
     
+    
 @app.route('/get_builds', methods=['GET'])
 def get_builds():
     min_price = request.args.get('minPrice')
@@ -125,7 +126,6 @@ def get_builds():
         components_record = BuildComponents.query.filter_by(build_id=build.id).first()
 
         if components_record is None:
-            # Handle the case where components are missing
             components_data = {
                 'gpu': {},
                 'cpu': {},
@@ -151,7 +151,7 @@ def get_builds():
             'id': build.id,
             'price_range_id': build.price_range_id,
             'price_range': f"{price_range.min_price}-{price_range.max_price}",
-            'build_type': build_type.type_name,  # Use build_type here
+            'build_type': build_type.type_name,  
             'build_type_id': build.build_type_id,
             'components': components_data  
         })
@@ -292,6 +292,7 @@ def get_saved_builds():
             }
 
         saved_builds_json.append({
+            'id': build.id,
             'build_type': build_type_data,
             'components': components_data,
         })
@@ -301,21 +302,33 @@ def get_saved_builds():
 
 @app.route('/delete_build/<int:build_id>', methods=['DELETE'])
 def delete_build(build_id):
-    print(f"Received build_id: {build_id}")
-    
-    if build_id is None:
-        return jsonify({'message': 'Invalid build ID'}), 400
+    username = request.cookies.get('username')
+    if not username:
+        return jsonify({'message': 'Not authenticated'}), 401
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
     
     try:
-        build_to_delete = Builds.query.get(build_id)
+        build_to_delete = Builds.query.filter_by(id=build_id, user_id=user.id).first()
         if build_to_delete:
+            components_to_delete = BuildComponents.query.filter_by(build_id=build_id).first()
+            
+            # Delete the components first if they exist
+            if components_to_delete:
+                db.session.delete(components_to_delete)
+            
+            # Delete the build
             db.session.delete(build_to_delete)
+            
             db.session.commit()
             return jsonify({'message': 'Build deleted successfully'}), 200
         else:
             return jsonify({'message': 'Build not found'}), 404
     except Exception as e:
         return jsonify({'message': f'Error occurred: {str(e)}'}), 500
+
 
 
 @app.route('/')
