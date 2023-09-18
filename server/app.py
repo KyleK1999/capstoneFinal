@@ -328,6 +328,31 @@ def delete_build(build_id):
             return jsonify({'message': 'Build not found'}), 404
     except Exception as e:
         return jsonify({'message': f'Error occurred: {str(e)}'}), 500
+    
+@app.route('/chart', methods=['GET'])
+def chart():
+    cpus = CPU.query.all()
+    gpus = GPU.query.all()
+    memories = Memory.query.all()
+    motherboards = MotherBoard.query.all()
+    storages = Storage.query.all()
+    psus = PSU.query.all()
+
+    cpu_data = [cpu.serialize() for cpu in cpus]
+    gpu_data = [gpu.serialize() for gpu in gpus]
+    memory_data = [memory.serialize() for memory in memories]
+    motherboard_data = [motherboard.serialize() for motherboard in motherboards]
+    storage_data = [storage.serialize() for storage in storages]
+    psu_data = [psu.serialize() for psu in psus]
+
+    return jsonify({
+        'cpu_data': cpu_data,
+        'gpu_data': gpu_data,
+        'memory_data': memory_data,
+        'motherboard_data': motherboard_data,
+        'storage_data': storage_data,
+        'psu_data': psu_data,
+    })   
 
 
 
