@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PcHardware from './PcHardware';
+import { toast } from 'react-toastify';  // Import the toast functionality
 
 const UserProfile = () => {
   const [savedBuilds, setSavedBuilds] = useState([]);
-  const [toggleMoreInfo, setToggleMoreInfo] = useState({});
 
   useEffect(() => {
     const fetchSavedBuilds = async () => {
@@ -22,13 +22,6 @@ const UserProfile = () => {
 
     fetchSavedBuilds();
   }, []);
-
-  const toggleMoreInfoFunc = (index, type) => {
-    setToggleMoreInfo(prevState => ({
-      ...prevState,
-      [`${index}_${type}`]: !prevState[`${index}_${type}`],
-    }));
-  };
 
   const calculateTotalPrice = (components) => {
     let total = 0;
@@ -51,37 +44,39 @@ const UserProfile = () => {
     })
     .then(res => res.json())
     .then(data => {
-      // Remove the deleted build from state
       setSavedBuilds(prevBuilds => prevBuilds.filter(build => build.id !== buildId));
+      toast.success('Build deleted successfully!');  // Toast for successful deletion
     })
     .catch(error => {
       console.error(`Error occurred: ${error}`);
+      toast.error('Failed to delete build.');  // Toast for error case
     });
   };
 
   return (
-    <div>
-      <h2>Your Saved Builds</h2>
-      <ul>
-        {savedBuilds.map((build, index) => {
-          return (
-            <li key={index}>
-              <h3>Build Type: {build.build_type?.type_name || 'N/A'}</h3>
-              <p>Total Price: ${calculateTotalPrice(build.components) || 'N/A'}</p>
-              <div>
-                <PcHardware index={index} name='CPU' type='cpu' partInfo={build.components.cpu} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />
-                <PcHardware index={index} name='GPU' type='gpu' partInfo={build.components.gpu} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />  
-                <PcHardware index={index} name='Memory' type='memory' partInfo={build.components.memory} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />
-                <PcHardware index={index} name='Motherboard' type='motherboard' partInfo={build.components.motherboard} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />
-                <PcHardware index={index} name='Storage' type='storage' partInfo={build.components.storage} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />                    
-                <PcHardware index={index} name='PSU' type='psu' partInfo={build.components.psu} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />       
-                <PcHardware index={index} name='Case' type='case' partInfo={build.components.case} toggleMoreInfo={toggleMoreInfoFunc} showMoreInfo={toggleMoreInfo} />
-              </div>
-              <button onClick={() => deleteBuild(build.id)}>Delete</button>  
-            </li>
-          );
-        })}
-      </ul>
+    <div className="container mt-5">
+      <h2 className="text-center mb-4">Your Saved Builds</h2>
+      {savedBuilds.length === 0 && <p className="text-center">No saved builds.</p>}
+      {savedBuilds.map((build, index) => {
+        const totalPrice = calculateTotalPrice(build.components);
+        return (
+          <div key={index} className="card mb-3">
+            <div className="card-header">
+              Build Type: {build.build_type?.type_name || 'N/A'} | Total Price: ${totalPrice || 'N/A'}
+            </div>
+            <div className="card-body">
+              <PcHardware name='CPU' type='cpu' partInfo={build.components.cpu} />
+              <PcHardware name='GPU' type='gpu' partInfo={build.components.gpu} />
+              <PcHardware name='Memory' type='memory' partInfo={build.components.memory} />
+              <PcHardware name='Motherboard' type='motherboard' partInfo={build.components.motherboard} />
+              <PcHardware name='Storage' type='storage' partInfo={build.components.storage} />
+              <PcHardware name='PSU' type='psu' partInfo={build.components.psu} />
+              <PcHardware name='Case' type='case' partInfo={build.components.case} />
+              <button className="btn btn-danger mt-2" onClick={() => deleteBuild(build.id)}>Delete</button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import PcHardware from './PcHardware';
-import PartSwitcher from './PartSwitcher'; 
+// import PartSwitcher from './PartSwitcher'; 
 import SaveBuildButton from './SaveBuildButton';
+import { toast } from 'react-toastify';
 
 function DisplayBuilds(props) {
   const [builds, setBuilds] = useState([]);
   const [error, setError] = useState(null);
   const [showMoreInfo, setShowMoreInfo] = useState({});
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +30,7 @@ function DisplayBuilds(props) {
         }
       } catch (err) {
         console.error('Error:', err);
+        toast.error("Could not fetch builds."); 
         setError('Could not fetch builds.');
       }
     };
@@ -36,6 +39,7 @@ function DisplayBuilds(props) {
   }, []);
 
   const switchPart = (buildIndex, partType, selectedPart) => {
+    console.log('From DisplayBuilds:', typeof switchPart);
     const updatedBuilds = [...builds];
     const buildToUpdate = updatedBuilds[buildIndex];
     if (buildToUpdate && buildToUpdate.components) {
@@ -68,50 +72,43 @@ function DisplayBuilds(props) {
     }));
   };
 
+  console.log('From DisplayBuilds:', typeof switchPart); 
+
   return (
-    <div>
-      <h2>Builds</h2>
-      {error && <p>Error: {error}</p>}
+    <div className="container mt-5">
+      <h2 className="text-center mb-4">Builds</h2>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          Error: {error}
+        </div>
+      )}
       {Array.isArray(builds) && builds.length > 0 ? (
         builds.map((build, index) => {
-          if (!build || !build.components) {
-            return <div key={index}>This build or its components are undefined or null.</div>;
-          }
-          
-          const { cpu, gpu, memory, motherboard, storage, psu, case: caseItem } = build.components;
           const totalPrice = calculateTotalPrice(build.components);
-
+          
           return (
-            <div key={index}>
-              <h3>Build Type: {build.build_type || 'N/A'} | Total Price: ${totalPrice}</h3>
-              <div>
-                <PcHardware index={index} name='CPU' type='cpu' partInfo={cpu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='cpu' switchPart={switchPart} />
+            <div key={index} className="card mb-3">
+              <div className="card-header">
+                Build Type: {build.build_type || 'N/A'} | Total Price: ${totalPrice}
+              </div>
+              <div className="card-body">
+                <PcHardware index={index} buildIndex={index} name='CPU' type='cpu' partInfo={build.components.cpu} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='GPU' type='gpu' partInfo={build.components.gpu} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='Memory' type='memory' partInfo={build.components.memory} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='Motherboard' type='motherboard' partInfo={build.components.motherboard} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='Storage' type='storage' partInfo={build.components.storage} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='PSU' type='psu' partInfo={build.components.psu} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
+                <PcHardware index={index} buildIndex={index} name='Case' type='case' partInfo={build.components.case} switchPart={switchPart} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} showSwitch={true} />
                 
-                <PcHardware index={index} name='GPU' type='gpu' partInfo={gpu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='gpu' switchPart={switchPart} />
-
-                <PcHardware index={index} name='Memory' type='memory' partInfo={memory} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='memory' switchPart={switchPart} />
-
-                <PcHardware index={index} name='Motherboard' type='motherboard' partInfo={motherboard} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='motherboard' switchPart={switchPart} />
-
-                <PcHardware index={index} name='Storage' type='storage' partInfo={storage} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='storage' switchPart={switchPart} />
-
-                <PcHardware index={index} name='PSU' type='psu' partInfo={psu} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='psu' switchPart={switchPart} />
-
-                <PcHardware index={index} name='Case' type='case' partInfo={caseItem} toggleMoreInfo={toggleMoreInfo} showMoreInfo={showMoreInfo} />
-                <PartSwitcher buildIndex={index} partType='case' switchPart={switchPart} />
                 <SaveBuildButton buildDetails={build} />
               </div>
             </div>
           );
         })
       ) : (
-        'Loading...'
+        <div className="text-center">
+          Loading...
+        </div>
       )}
     </div>
   );

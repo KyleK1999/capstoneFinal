@@ -26,14 +26,16 @@ const MyChart = () => {
   }, []);
 
   return (
-    <div>
-      <h1>Charted Data For All Components</h1>
-      {data.cpu_data && <ComponentChart componentName="CPU" componentData={data.cpu_data} sortKey="Speed" />}
-      {data.gpu_data && <ComponentChart componentName="GPU" componentData={data.gpu_data} sortKey="Speed" />}
-      {data.memory_data && <ComponentChart componentName="Memory" componentData={data.memory_data} sortKey="Speed" />}
-      {data.motherboard_data && <ComponentChart componentName="MotherBoard" componentData={data.motherboard_data} sortKey="Price" />}
-      {data.storage_data && <ComponentChart componentName="Storage" componentData={data.storage_data} sortKey="Size" />}
-      {data.psu_data && <ComponentChart componentName="PSU" componentData={data.psu_data} sortKey="Wattage" />}
+    <div className="container mt-4">
+      <h1 className="text-center mb-4">Charted Data For All Components</h1>
+      <div className="row">
+        {data.cpu_data && <div className="col-lg-6"><ComponentChart componentName="CPU" componentData={data.cpu_data} sortKey="Speed" /></div>}
+        {data.gpu_data && <div className="col-lg-6"><ComponentChart componentName="GPU" componentData={data.gpu_data} sortKey="Speed" /></div>}
+        {data.memory_data && <div className="col-lg-6"><ComponentChart componentName="Memory" componentData={data.memory_data} sortKey="Speed" /></div>}
+        {data.motherboard_data && <div className="col-lg-6"><ComponentChart componentName="MotherBoard" componentData={data.motherboard_data} sortKey="Price" /></div>}
+        {data.storage_data && <div className="col-lg-6"><ComponentChart componentName="Storage" componentData={data.storage_data} sortKey="Size" /></div>}
+        {data.psu_data && <div className="col-lg-6"><ComponentChart componentName="PSU" componentData={data.psu_data} sortKey="Wattage" /></div>}
+      </div>
     </div>
   );
 };

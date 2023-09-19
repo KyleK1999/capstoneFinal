@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SaveBuildButton = ({ buildDetails }) => {
   const [username, setUsername] = useState('');
@@ -11,7 +13,7 @@ const SaveBuildButton = ({ buildDetails }) => {
 
   const saveBuild = async () => {
     if (!username) {
-      alert("You need to login first!");
+      toast.error("You need to login first!");
       return;
     }
 
@@ -29,17 +31,18 @@ const SaveBuildButton = ({ buildDetails }) => {
 
       const data = await response.json();
       if (response.status === 200) {
-        alert(data.message);
+        toast.success(data.message);
       } else {
-        alert(data.message); 
+        toast.error(data.message); 
       }
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
+      toast.error("There was a problem saving the build.");
     }
   };
 
   return (
-    <button onClick={saveBuild}>Save Build</button>
+    <button className="btn btn-primary rounded-pill" onClick={saveBuild}>Save Build</button>
   );
 };
 

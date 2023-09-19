@@ -1,11 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Redirect, Switch, useHistory } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify'; 
 import Login from './components/Login';
 import SelectPriceRange from './components/SelectedPriceRange';
 import DisplayBuilds from './components/DisplayBuilds';
 import UserProfile from './components/UserProfile';
 import Navbar from './components/NavBar';
 import Chart from './components/Chart';
+
+
 
 function App() {
   const history = useHistory();
@@ -14,6 +17,7 @@ function App() {
 
   return (
     <Router>
+      <ToastContainer />  
       <Navbar currentPath={currentPath} noNavbarRoutes={noNavbarRoutes} />
       <Switch>
         <Route path="/login" exact component={Login} />

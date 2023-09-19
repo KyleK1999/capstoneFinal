@@ -64,9 +64,13 @@ const ComponentChart = ({ componentName, sortKey }) => {
   }, [componentName, sortKey]);
 
   return (
-    <div>
-      <h1>{componentName} Chart</h1>
-      <canvas ref={chartRef} width="400" height="400"></canvas>
+    <div className="card mb-4">
+      <div className="card-header">
+        <h2>{componentName} Chart</h2>
+      </div>
+      <div className="card-body">
+        <canvas ref={chartRef} width="400" height="400"></canvas>
+      </div>
     </div>
   );
 };

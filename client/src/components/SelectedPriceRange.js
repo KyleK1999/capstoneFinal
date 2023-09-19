@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -14,7 +15,7 @@ function SelectPriceRange() {
     const username = getCookie('username');
 
     if (!username) {
-      alert('Please login first.');
+      toast.error('Please login first.');  
       return;
     }
 
@@ -30,20 +31,42 @@ function SelectPriceRange() {
     })
     .then(res => res.json())
     .then(data => {
-      alert(data.message);
+      toast(data.message);  
       history.push(`/display-builds?minPrice=${minPrice}&maxPrice=${maxPrice}`);  
     })
     .catch(err => {
+      toast.error("Failed to set price range");  
       console.error("Failed to set price range:", err);
     });
   };
 
   return (
-    <div>
-      <h1>Select Price Range</h1>
-      <button onClick={() => handlePriceRangeSelection(500, 750)}>500 - 750</button>
-      <button onClick={() => handlePriceRangeSelection(751, 1000)}>751 - 1000</button>
-      <button onClick={() => handlePriceRangeSelection(1001, 1500)}>1001 - 1500</button>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-4">
+          <h1 className="text-center mb-4">Select Price Range</h1>
+          <div className="d-grid gap-2">
+            <button 
+              className="btn btn-primary" 
+              onClick={() => handlePriceRangeSelection(500, 750)}
+            >
+              500 - 750
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => handlePriceRangeSelection(751, 1000)}
+            >
+              751 - 1000
+            </button>
+            <button 
+              className="btn btn-success" 
+              onClick={() => handlePriceRangeSelection(1001, 1500)}
+            >
+              1001 - 1500
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
