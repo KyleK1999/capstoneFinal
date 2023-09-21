@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PcHardware from './PcHardware';
-import { toast } from 'react-toastify';  // Import the toast functionality
+import { toast } from 'react-toastify';  
 
 const UserProfile = () => {
   const [savedBuilds, setSavedBuilds] = useState([]);
@@ -45,11 +45,11 @@ const UserProfile = () => {
     .then(res => res.json())
     .then(data => {
       setSavedBuilds(prevBuilds => prevBuilds.filter(build => build.id !== buildId));
-      toast.success('Build deleted successfully!');  // Toast for successful deletion
+      toast.success('Build deleted successfully!');  
     })
     .catch(error => {
       console.error(`Error occurred: ${error}`);
-      toast.error('Failed to delete build.');  // Toast for error case
+      toast.error('Failed to delete build.');  
     });
   };
 
